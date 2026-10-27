@@ -47,6 +47,7 @@ import com.maxrave.common.Config.MAIN_PLAYER
 import com.maxrave.common.Config.PLAYER_CACHE
 import com.maxrave.common.Config.SERVICE_SCOPE
 import com.maxrave.common.MERGING_DATA_TYPE
+import com.maxrave.domain.data.player.InstrumentalRegistry
 import com.maxrave.domain.extension.now
 import com.maxrave.domain.manager.DataStoreManager
 import com.maxrave.domain.mediaservice.handler.DownloadHandler
@@ -87,6 +88,7 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 import org.simpmusic.cast.initCast
 import org.simpmusic.cast.wrapWithCastPlayer
+import java.io.File
 import java.net.Proxy
 import kotlin.time.Duration.Companion.seconds
 
@@ -243,6 +245,20 @@ private fun provideResolvingDataSourceFactory(
     val chunkLength = 10 * 512 * 1024L
     return ResolvingDataSource.Factory(cacheDataSourceFactory) { dataSpec ->
         val mediaId = dataSpec.key ?: error("No media id")
+        // A song switched to its instrumental plays the cached file instead of any stream. Its
+        // length is left unset, which is what makes both caches pass it straight through to
+        // FileDataSource (FLAG_IGNORE_CACHE_FOR_UNSET_LENGTH_REQUESTS, in provideCacheDataSource):
+        // every other branch here subranges, so only this one reaches the caches unset. Without
+        // that, the file would be stored again in playerCache under the song's own key.
+        if (!mediaId.startsWith(MERGING_DATA_TYPE.VIDEO)) {
+            InstrumentalRegistry.pathFor(mediaId)?.let { path ->
+                return@Factory dataSpec
+                    .buildUpon()
+                    .setUri(File(path).toUri())
+                    .setLength(C.LENGTH_UNSET.toLong())
+                    .build()
+            }
+        }
         Logger.w("Stream", mediaId)
         Logger.w("Stream", mediaId.startsWith(MERGING_DATA_TYPE.VIDEO).toString())
         if (downloadCache.isFullyCached(mediaId, dataSpec.position)) {
@@ -497,9 +513,9 @@ private fun provideCacheDataSource(
                                     ).build(),
                             ),
                         ),
-                ),
+                ).setFlags(CacheDataSource.FLAG_IGNORE_CACHE_FOR_UNSET_LENGTH_REQUESTS),
         ).setCacheWriteDataSinkFactory(null)
-        .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR)
+        .setFlags(CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR or CacheDataSource.FLAG_IGNORE_CACHE_FOR_UNSET_LENGTH_REQUESTS)
 
 @UnstableApi
 private fun provideLoadControl(): LoadControl =

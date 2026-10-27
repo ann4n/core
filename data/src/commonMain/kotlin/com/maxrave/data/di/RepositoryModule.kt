@@ -10,6 +10,7 @@ import com.maxrave.data.repository.AutoEqRepositoryImpl
 import com.maxrave.data.lyrics.LyricsRomanizerRepositoryImpl
 import com.maxrave.data.repository.CommonRepositoryImpl
 import com.maxrave.data.repository.HomeRepositoryImpl
+import com.maxrave.data.repository.InstrumentalRepositoryImpl
 import com.maxrave.data.repository.ImportRepositoryImpl
 import com.maxrave.data.repository.LocalPlaylistRepositoryImpl
 import com.maxrave.data.repository.LyricsCanvasRepositoryImpl
@@ -28,6 +29,7 @@ import com.maxrave.domain.repository.LyricsRomanizerRepository
 import com.maxrave.domain.repository.CommonRepository
 import com.maxrave.domain.repository.HomeRepository
 import com.maxrave.domain.repository.ImportRepository
+import com.maxrave.domain.repository.InstrumentalRepository
 import com.maxrave.domain.repository.LocalPlaylistRepository
 import com.maxrave.domain.repository.LyricsCanvasRepository
 import com.maxrave.domain.repository.PlaylistRepository
@@ -37,6 +39,7 @@ import com.maxrave.domain.repository.SongRepository
 import com.maxrave.domain.repository.StreamRepository
 import com.maxrave.domain.repository.UpdateRepository
 import org.koin.core.qualifier.named
+import org.simpmusic.aiservice.VocalRemover
 import org.koin.dsl.module
 
 val repositoryModule =
@@ -75,6 +78,11 @@ val repositoryModule =
 
         single<HomeRepository>(createdAtStart = true) {
             HomeRepositoryImpl(get(), get())
+        }
+
+        // Lazy: nothing needs it until someone asks for an instrumental.
+        single<InstrumentalRepository> {
+            InstrumentalRepositoryImpl(get(), get(), get(), VocalRemover(), "${fileDir()}/instrumental")
         }
 
         single<ImportRepository>(createdAtStart = true) {

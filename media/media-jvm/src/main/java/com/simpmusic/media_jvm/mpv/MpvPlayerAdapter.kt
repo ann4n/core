@@ -3,6 +3,7 @@ package com.simpmusic.media_jvm.mpv
 import com.maxrave.common.MERGING_DATA_TYPE
 import com.maxrave.domain.data.player.GenericMediaItem
 import com.maxrave.domain.data.player.GenericPlaybackParameters
+import com.maxrave.domain.data.player.InstrumentalRegistry
 import com.maxrave.domain.data.player.PlayerConstants
 import com.maxrave.domain.data.player.PlayerError
 import com.maxrave.domain.extension.isVideo
@@ -2758,6 +2759,9 @@ class MpvPlayerAdapter(
             mediaItem.isVideo() &&
                 dataStoreManager.watchVideoInsteadOfPlayingAudio.first() == DataStoreManager.TRUE
         val videoId = mediaItem.mediaId
+
+        // A song switched to its instrumental plays the cached file, as audio only.
+        InstrumentalRegistry.pathFor(videoId)?.let { return PlayableSource(isVideo = false, url = it) }
 
         // Check downloads first
         val downloadFiles =

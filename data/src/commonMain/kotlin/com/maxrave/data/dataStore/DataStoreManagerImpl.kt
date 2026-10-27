@@ -1179,6 +1179,19 @@ internal class DataStoreManagerImpl(
             preferences[AI_API_KEY] ?: ""
         }
 
+    override val mvsepApiToken: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[MVSEP_API_TOKEN] ?: ""
+        }
+
+    override suspend fun setMvsepApiToken(token: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[MVSEP_API_TOKEN] = token
+            }
+        }
+    }
+
     override val useAITranslation: Flow<String> =
         settingsDataStore.data.map { preferences ->
             preferences[USE_AI_TRANSLATION] ?: FALSE
@@ -1714,6 +1727,7 @@ internal class DataStoreManagerImpl(
         val VISITOR_DATA = stringPreferencesKey("visitor_data")
         val AI_PROVIDER = stringPreferencesKey("ai_provider")
         val AI_API_KEY = stringPreferencesKey("ai_gemini_api_key")
+        val MVSEP_API_TOKEN = stringPreferencesKey("mvsep_api_token")
 
         val CUSTOM_MODEL_ID = stringPreferencesKey("custom_model_id")
         val CUSTOM_OPENAI_BASE_URL = stringPreferencesKey("custom_openai_base_url")

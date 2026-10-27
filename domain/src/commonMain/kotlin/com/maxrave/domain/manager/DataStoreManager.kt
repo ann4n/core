@@ -327,6 +327,11 @@ interface DataStoreManager {
 
     val aiApiKey: Flow<String>
 
+    /** API token for MVSEP, the vocal remover behind instrumental playback; empty when not set. */
+    val mvsepApiToken: Flow<String>
+
+    suspend fun setMvsepApiToken(token: String)
+
     val useAITranslation: Flow<String>
 
     suspend fun setUseAITranslation(use: Boolean)
